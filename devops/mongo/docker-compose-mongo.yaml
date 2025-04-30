@@ -1,0 +1,17 @@
+services:
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    ports: [ "27017:27017" ]
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: secret
+    volumes:
+      - mongo-data:/data/db
+      - ./init-db/init.js:/docker-entrypoint-initdb.d/init.js:ro
+    networks:
+      - app-network
+
+volumes:
+  mongo-data:
+
