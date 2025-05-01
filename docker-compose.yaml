@@ -1,0 +1,9 @@
+include:
+  - './devops/networks/docker-compose-networks.yaml'
+  - './devops/mongo/docker-compose-mongo.yaml'
+  - './devops/minio/docker-compose-s3.yaml'
+  - './devops/kafka/docker-compose-kafka.yaml'
+  - './devops/kafka/docker-compose-zookeeper.yaml'
+  - './loader_service/loader/docker-compose-loader.yaml'
+  - './processor_service/processor/docker-compose.yaml'
+
