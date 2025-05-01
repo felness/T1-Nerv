@@ -9,10 +9,14 @@ import com.work.matmode.loader.service.kafka.KafkaProducerService;
 import com.work.matmode.loader.service.minio.MinioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -20,6 +24,7 @@ import java.util.List;
 @RequestMapping("/api/documents")
 @RequiredArgsConstructor
 @Slf4j
+@CrossOrigin
 public class DocumentController {
 
     private final DocumentService documentService;
@@ -93,6 +98,64 @@ public class DocumentController {
             return ResponseEntity.ok("File uploaded successfully: " + fileName);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error uploading file: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/presigned-url")
+    public ResponseEntity<?> getPresignedUrl(@RequestParam String fileName) {
+        try {
+            if (fileName == null || fileName.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body("File name is required");
+            }
+            String presignedUrl = minioService.getFileUrl(fileName);
+            return ResponseEntity.ok(new PresignedUrlResponse(presignedUrl));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Failed to generate presigned URL: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/download")
+    public ResponseEntity<?> downloadFile(
+            @RequestParam String fileName,
+            @RequestParam(required = false, defaultValue = "false") boolean inline
+    ) {
+        try {
+            if (fileName == null || fileName.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(new ErrorResponse("File name is required"));
+            }
+            InputStream inputStream = minioService.downloadFile(fileName);
+            InputStreamResource resource = new InputStreamResource(inputStream);
+
+            String contentType = "application/octet-stream";
+            if (fileName.toLowerCase().endsWith(".jpg") || fileName.toLowerCase().endsWith(".jpeg")) {
+                contentType = "image/jpeg";
+            } else if (fileName.toLowerCase().endsWith(".png")) {
+                contentType = "image/png";
+            } else if (fileName.toLowerCase().endsWith(".pdf")) {
+                contentType = "application/pdf";
+            }
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(contentType));
+            headers.set(HttpHeaders.CONTENT_DISPOSITION, inline ? "inline;filename=" + fileName : "attachment;filename=" + fileName);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(resource);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new ErrorResponse("Failed to download file: " + e.getMessage()));
+        }
+    }
+
+    static class ErrorResponse {
+        private final String error;
+
+        public ErrorResponse(String error) {
+            this.error = error;
+        }
+
+        public String getError() {
+            return error;
         }
     }
 

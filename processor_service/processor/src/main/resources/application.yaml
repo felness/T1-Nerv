@@ -15,7 +15,7 @@ spring:
       uri: mongodb://localhost:27017/documents
 
 server:
-  port: 8080
+  port: 8081
 
 minio:
   url: http://minio:9000

@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  model-pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+      - NVIDIA_VISIBLE_DEVICES=all
+    runtime: nvidia
+    device_requests:
+          - capabilities: [ gpu ]
+    networks:
+      - app-network

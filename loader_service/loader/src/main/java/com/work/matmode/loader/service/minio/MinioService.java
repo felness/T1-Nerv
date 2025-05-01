@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -44,6 +45,19 @@ public class MinioService {
         return fileName;
     }
 
+    public InputStream downloadFile(String fileName) throws Exception {
+        try {
+            return minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(fileName)
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new Exception("Failed to download file: " + e.getMessage(), e);
+        }
+    }
+
 
     public String getFileUrl(String fileName) throws Exception {
         return minioClient.getPresignedObjectUrl(
@@ -51,7 +65,7 @@ public class MinioService {
                         .method(Method.GET)
                         .bucket(bucketName)
                         .object(fileName)
-                        .expiry(60 * 60) // 1 hour
+                        .expiry(7 * 24 * 60 * 60)
                         .build());
     }
 
